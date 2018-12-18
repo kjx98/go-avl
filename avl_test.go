@@ -9,13 +9,14 @@ package avl
 
 import (
 	"math/rand"
+	"reflect"
 	"sort"
 	"testing"
 )
 
 func TestAVLTree(t *testing.T) {
 	Equal := func(a, b interface{}, ss string, args ...interface{}) {
-		if a != b {
+		if !reflect.DeepEqual(a, b) {
 			t.Errorf(ss, args...)
 		}
 	}
@@ -24,12 +25,20 @@ func TestAVLTree(t *testing.T) {
 		return a.(int) - b.(int)
 	})
 	Equal(0, tree.Len(), "Len(): empty")
-	//Nil(tree.First(), "First(): empty")
-	//Nil(tree.Last(), "Last(): empty")
+	if tree.First() != nil {
+		t.Error("First(): empty")
+	}
+	if tree.Last() != nil {
+		t.Error("Last(): empty")
+	}
 
 	iter := tree.Iterator(Forward)
-	//require.Nil(iter.First(), "Iterator: First(), empty")
-	//require.Nil(iter.Next(), "Iterator: Next(), empty")
+	if nil != iter.First() {
+		t.Error("Iterator: First(), empty")
+	}
+	if nil != iter.Next() {
+		t.Error( "Iterator: Next(), empty")
+	}
 
 	// Test insertion.
 	const nrEntries = 1024
@@ -40,10 +49,10 @@ func TestAVLTree(t *testing.T) {
 			continue
 		}
 		insertedMap[v] = tree.Insert(v)
-		//tree.validate(require)
+		tree.validate(t)
 	}
 	Equal(nrEntries, tree.Len(), "Len(): After insertion")
-	//tree.validate(require)
+	tree.validate(t)
 
 	// Ensure that all entries can be found.
 	for k, v := range insertedMap {
@@ -92,11 +101,11 @@ func TestAVLTree(t *testing.T) {
 		return true
 	}
 	tree.ForEach(Forward, forEachFn)
-	//Equal(fwdInOrder, forEachValues, "ForEach: Forward")
+	Equal(fwdInOrder, forEachValues, "ForEach: Forward")
 
 	forEachValues = make([]int, 0, nrEntries)
 	tree.ForEach(Backward, forEachFn)
-	//Equal(revInOrder, forEachValues, "ForEach: Backward")
+	Equal(revInOrder, forEachValues, "ForEach: Backward")
 
 	// Test removal.
 	for i, idx := range rand.Perm(nrEntries) { // In random order.
@@ -106,14 +115,20 @@ func TestAVLTree(t *testing.T) {
 
 		tree.Remove(node)
 		Equal(nrEntries-(i+1), tree.Len(), "Len(): %v (Post-remove)", v)
-		//tree.validate(require)
+		tree.validate(t)
 
 		node = tree.Find(v)
-		//require.Nil(node, "Find(): %v (Post-remove)", v)
+		if nil != node {
+			t.Errorf("Find(): %v (Post-remove)", v)
+		}
 	}
 	Equal(0, tree.Len(), "Len(): After removal")
-	//require.Nil(tree.First(), "First(): After removal")
-	//require.Nil(tree.Last(), "Last(): After removal")
+	if nil != tree.First() {
+		t.Error("First(): After removal")
+	}
+	if nil != tree.Last() {
+		t.Error("Last(): After removal")
+	}
 
 	// Refill the tree.
 	for _, v := range fwdInOrder {
@@ -130,42 +145,42 @@ func TestAVLTree(t *testing.T) {
 		visited++
 
 		tree.Remove(node)
-		//tree.validate(require)
+		tree.validate(t)
 	}
 	Equal(0, tree.Len(), "Len(): After iterating removal")
 }
 
-/*
-func (t *Tree) validate(require *require.Assertions) {
-	checkInvariants(require, t.root, nil)
+func (t *Tree) validate(te *testing.T) {
+	checkInvariants(te, t.root, nil)
 }
 
-func checkInvariants(require *require.Assertions, node, parent *Node) int {
+func checkInvariants(te *testing.T, node, parent *Node) int {
+	Equal := func (a, b interface{}) {
+		if !reflect.DeepEqual(a, b) {
+			te.Error(a,"notEqual", b)
+		}
+	}
 	if node == nil {
 		return 0
 	}
 
 	// Validate the parent pointer.
-	require.Equal(parent, node.parent)
+	Equal(parent, node.parent)
 
 	// Validate that the balance factor is -1, 0, 1.
-	require.Condition(func() bool {
-		switch node.balance {
+	switch node.balance {
 		case -1, 0, 1:
-			return true
+		default: te.Error(node.balance)
 		}
-		return false
-	})
 
 	// Recursively derive the height of the left and right sub-trees.
-	lHeight := checkInvariants(require, node.left, node)
-	rHeight := checkInvariants(require, node.right, node)
+	lHeight := checkInvariants(te, node.left, node)
+	rHeight := checkInvariants(te, node.right, node)
 
 	// Validate the AVL invariant and the balance factor.
-	require.Equal(int(node.balance), rHeight-lHeight)
+	Equal(int(node.balance), rHeight-lHeight)
 	if lHeight > rHeight {
 		return lHeight + 1
 	}
 	return rHeight + 1
 }
-*/
