@@ -34,7 +34,7 @@ var (
 type CompareFunc func(a, b interface{}) int
 
 // Direction is the direction associated with an iterator.
-type Direction int8
+type Direction int
 
 const (
 	// Backward is backward in-order.
@@ -49,7 +49,7 @@ const (
 type Iterator struct {
 	tree        *Tree
 	cur, next   *Node
-	sign        int8
+	sign        int
 	initialized bool
 }
 
@@ -95,7 +95,7 @@ type Node struct {
 	Value interface{}
 
 	parent, left, right *Node
-	balance             int8
+	balance             int
 }
 
 func (n *Node) reset() {
@@ -104,19 +104,19 @@ func (n *Node) reset() {
 	n.balance = 0
 }
 
-func (n *Node) setParentBalance(parent *Node, balance int8) {
+func (n *Node) setParentBalance(parent *Node, balance int) {
 	n.parent = parent
 	n.balance = balance
 }
 
-func (n *Node) getChild(sign int8) *Node {
+func (n *Node) getChild(sign int) *Node {
 	if sign < 0 {
 		return n.left
 	}
 	return n.right
 }
 
-func (n *Node) nextOrPrevInOrder(sign int8) *Node {
+func (n *Node) nextOrPrevInOrder(sign int) *Node {
 	var next, tmp *Node
 
 	if next = n.getChild(+sign); next != nil {
@@ -137,7 +137,7 @@ func (n *Node) nextOrPrevInOrder(sign int8) *Node {
 	return next
 }
 
-func (n *Node) setChild(sign int8, child *Node) {
+func (n *Node) setChild(sign int, child *Node) {
 	if sign < 0 {
 		n.left = child
 	} else {
@@ -145,7 +145,7 @@ func (n *Node) setChild(sign int8, child *Node) {
 	}
 }
 
-func (n *Node) adjustBalanceFactor(amount int8) {
+func (n *Node) adjustBalanceFactor(amount int) {
 	n.balance += amount
 }
 
@@ -295,7 +295,7 @@ func (t *Tree) Iterator(direction Direction) *Iterator {
 
 	return &Iterator{
 		tree: t,
-		sign: int8(direction),
+		sign: int(direction),
 	}
 }
 
@@ -312,7 +312,7 @@ func (t *Tree) ForEach(direction Direction, fn func(*Node) bool) {
 	}
 }
 
-func (t *Tree) firstOrLastInOrder(sign int8) *Node {
+func (t *Tree) firstOrLastInOrder(sign int) *Node {
 	first := t.root
 	if first != nil {
 		for {
@@ -338,7 +338,7 @@ func (t *Tree) replaceChild(parent, oldChild, newChild *Node) {
 	}
 }
 
-func (t *Tree) rotate(a *Node, sign int8) {
+func (t *Tree) rotate(a *Node, sign int) {
 	b := a.getChild(-sign)
 	e := b.getChild(+sign)
 	p := a.parent
@@ -356,7 +356,7 @@ func (t *Tree) rotate(a *Node, sign int8) {
 	t.replaceChild(p, a, b)
 }
 
-func (t *Tree) doDoubleRotate(b, a *Node, sign int8) *Node {
+func (t *Tree) doDoubleRotate(b, a *Node, sign int) *Node {
 	e := b.getChild(+sign)
 	f := e.getChild(-sign)
 	g := e.getChild(+sign)
@@ -394,7 +394,7 @@ func (t *Tree) doDoubleRotate(b, a *Node, sign int8) *Node {
 	return e
 }
 
-func (t *Tree) handleSubtreeGrowth(node, parent *Node, sign int8) bool {
+func (t *Tree) handleSubtreeGrowth(node, parent *Node, sign int) bool {
 	oldBalanceFactor := parent.balance
 	if oldBalanceFactor == 0 {
 		parent.adjustBalanceFactor(sign)
@@ -484,7 +484,7 @@ func (t *Tree) swapWithSuccessor(x *Node) (*Node, bool) {
 	return ret, leftDeleted
 }
 
-func (t *Tree) handleSubtreeShrink(parent *Node, sign int8, leftDeleted *bool) *Node {
+func (t *Tree) handleSubtreeShrink(parent *Node, sign int, leftDeleted *bool) *Node {
 	oldBalanceFactor := parent.balance
 	if oldBalanceFactor == 0 {
 		parent.adjustBalanceFactor(sign)
