@@ -37,7 +37,7 @@ func TestAVLTree(t *testing.T) {
 		t.Error("Iterator: First(), empty")
 	}
 	if nil != iter.Next() {
-		t.Error( "Iterator: Next(), empty")
+		t.Error("Iterator: Next(), empty")
 	}
 
 	// Test insertion.
@@ -155,9 +155,9 @@ func (t *Tree) validate(te *testing.T) {
 }
 
 func checkInvariants(te *testing.T, node, parent *Node) int {
-	Equal := func (a, b interface{}) {
+	Equal := func(a, b interface{}) {
 		if !reflect.DeepEqual(a, b) {
-			te.Error(a,"notEqual", b)
+			te.Error(a, "notEqual", b)
 		}
 	}
 	if node == nil {
@@ -169,9 +169,10 @@ func checkInvariants(te *testing.T, node, parent *Node) int {
 
 	// Validate that the balance factor is -1, 0, 1.
 	switch node.balance {
-		case -1, 0, 1:
-		default: te.Error(node.balance)
-		}
+	case -1, 0, 1:
+	default:
+		te.Error(node.balance)
+	}
 
 	// Recursively derive the height of the left and right sub-trees.
 	lHeight := checkInvariants(te, node.left, node)
@@ -183,4 +184,34 @@ func checkInvariants(te *testing.T, node, parent *Node) int {
 		return lHeight + 1
 	}
 	return rHeight + 1
+}
+
+func BenchmarkAVLInsert(b *testing.B) {
+	b.StopTimer()
+	tree := New(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	for i := 0; i < 1e6; i++ {
+		tree.Insert(i)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		v := (rand.Int() % 1e6) + 2e6
+		tree.Insert(v)
+	}
+}
+
+func BenchmarkAVLFind(b *testing.B) {
+	b.StopTimer()
+	tree := New(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	for i := 0; i < 1e6; i++ {
+		tree.Insert(i)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		v := (rand.Int() % 1e6)
+		tree.Find(v)
+	}
 }
