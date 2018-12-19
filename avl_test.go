@@ -20,25 +20,22 @@ func TestAVLTree(t *testing.T) {
 			t.Errorf(ss, args...)
 		}
 	}
+	Nil := func(a interface{}, ss string, args ...interface{}) {
+		if !reflect.ValueOf(a).IsNil() {
+			t.Errorf(ss, args...)
+		}
+	}
 
 	tree := New(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
 	Equal(0, tree.Len(), "Len(): empty")
-	if tree.First() != nil {
-		t.Error("First(): empty")
-	}
-	if tree.Last() != nil {
-		t.Error("Last(): empty")
-	}
+	Nil(tree.First(), "First(): empty")
+	Nil(tree.Last(), "Last(): empty")
 
 	iter := tree.Iterator(Forward)
-	if nil != iter.First() {
-		t.Error("Iterator: First(), empty")
-	}
-	if nil != iter.Next() {
-		t.Error("Iterator: Next(), empty")
-	}
+	Nil(iter.First(), "Iterator: First(), empty")
+	Nil(iter.Next(), "Iterator: Next(), empty")
 
 	// Test insertion.
 	const nrEntries = 1024
@@ -118,17 +115,11 @@ func TestAVLTree(t *testing.T) {
 		tree.validate(t)
 
 		node = tree.Find(v)
-		if nil != node {
-			t.Errorf("Find(): %v (Post-remove)", v)
-		}
+		Nil(node, "Find(): %v (Post-remove)", v)
 	}
 	Equal(0, tree.Len(), "Len(): After removal")
-	if nil != tree.First() {
-		t.Error("First(): After removal")
-	}
-	if nil != tree.Last() {
-		t.Error("Last(): After removal")
-	}
+	Nil(tree.First(), "First(): After removal")
+	Nil(tree.Last(), "Last(): After removal")
 
 	// Refill the tree.
 	for _, v := range fwdInOrder {
