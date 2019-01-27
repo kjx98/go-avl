@@ -206,3 +206,26 @@ func BenchmarkAVLFind(b *testing.B) {
 		tree.Find(v)
 	}
 }
+
+func BenchmarkAVLDeleteLeft(b *testing.B) {
+	b.StopTimer()
+	tree := New(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	for i := 0; i < 5e6; i++ {
+		tree.Insert(i)
+	}
+	b.StartTimer()
+	it := tree.Iterator(Forward)
+	nn := it.First()
+	for i := 0; i < b.N; i++ {
+		if nn = it.Get(); nn != nil {
+			tree.Remove(nn)
+			if it.Next() == nil {
+				break
+			}
+		} else {
+			break
+		}
+	}
+}
