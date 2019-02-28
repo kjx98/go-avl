@@ -37,9 +37,6 @@ type CompareFunc func(a, b interface{}) int
 type Direction int
 
 const (
-	// Backward is backward in-order.
-	Backward Direction = -1
-
 	// Forward is forward in-order.
 	Forward Direction = 1
 )
@@ -288,14 +285,14 @@ func (t *Tree) Remove(node *Node) {
 // except for removing the current Node.
 func (t *Tree) Iterator(direction Direction) *Iterator {
 	switch direction {
-	case Forward, Backward:
+	case Forward:
 	default:
 		panic(errInvalidDirection)
 	}
 
 	return &Iterator{
 		tree: t,
-		sign: int(direction),
+		sign: 1, //int(direction),
 	}
 }
 
