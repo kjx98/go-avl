@@ -81,16 +81,6 @@ func TestAVLTree(t *testing.T) {
 	}
 	Equal(nrEntries, visited, "Iterator: Forward: Visited")
 
-	iter = tree.Iterator(Backward)
-	visited = 0
-	for node := iter.First(); node != nil; node = iter.Next() {
-		v, idx := node.Value.(int), visited
-		Equal(revInOrder[idx], v, "Iterator: Backward[%v]", idx)
-		Equal(node, iter.Get(), "Iterator: Backward[%v]: Get()", idx)
-		visited++
-	}
-	Equal(nrEntries, visited, "Iterator: Backward: Visited")
-
 	// Test the forward/backward ForEach.
 	forEachValues := make([]int, 0, nrEntries)
 	forEachFn := func(n *Node) bool {
@@ -101,8 +91,6 @@ func TestAVLTree(t *testing.T) {
 	Equal(fwdInOrder, forEachValues, "ForEach: Forward")
 
 	forEachValues = make([]int, 0, nrEntries)
-	tree.ForEach(Backward, forEachFn)
-	Equal(revInOrder, forEachValues, "ForEach: Backward")
 
 	// Test removal.
 	for i, idx := range rand.Perm(nrEntries) { // In random order.
