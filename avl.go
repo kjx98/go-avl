@@ -78,11 +78,11 @@ func (it *Iterator) Next() *Node {
 	if !it.initialized {
 		it.First()
 	}
+	it.cur = it.next
 	if it.next == nil {
 		return nil
 	}
 
-	it.cur = it.next
 	it.next = it.cur.nextOrPrevInOrder(it_sign)
 	return it.cur
 }
