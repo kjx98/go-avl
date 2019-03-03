@@ -39,14 +39,15 @@ type Direction int
 const (
 	// Forward is forward in-order.
 	Forward Direction = 1
+	it_sign int       = 1
 )
 
 // Iterator is a Tree iterator.  Modifying the Tree while iterating is
 // unsupported except for removing the current Node.
 type Iterator struct {
-	tree        *Tree
-	cur, next   *Node
-	sign        int
+	tree      *Tree
+	cur, next *Node
+	//sign        int
 	initialized bool
 }
 
@@ -56,7 +57,7 @@ type Iterator struct {
 func (it *Iterator) First() *Node {
 	it.cur, it.next = it.tree.First(), nil
 	if it.cur != nil {
-		it.next = it.cur.nextOrPrevInOrder(it.sign)
+		it.next = it.cur.nextOrPrevInOrder(it_sign)
 	}
 	it.initialized = true
 	return it.cur
@@ -82,7 +83,7 @@ func (it *Iterator) Next() *Node {
 	}
 
 	it.cur = it.next
-	it.next = it.cur.nextOrPrevInOrder(it.sign)
+	it.next = it.cur.nextOrPrevInOrder(it_sign)
 	return it.cur
 }
 
@@ -305,7 +306,7 @@ func (t *Tree) Iterator(direction Direction) *Iterator {
 
 	return &Iterator{
 		tree: t,
-		sign: 1, //int(direction),
+		//sign: 1, //int(direction),
 	}
 }
 
