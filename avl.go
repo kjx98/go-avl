@@ -247,8 +247,10 @@ func (t *Tree) Remove(node *Node) {
 	if node.parent == node {
 		panic(errNotInTree)
 	}
-	if t.first == node {
-		t.first = nil
+	if t.first != nil {
+		if t.cmpFn(node.Value, t.first.Value) <= 0 {
+			t.first = nil
+		}
 	}
 
 	t.size--
