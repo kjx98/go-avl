@@ -18,7 +18,7 @@ Features:
 Note:
 
  * The package itself is free from external dependencies, the unit tests use
-   [testify][3].
+   [testify][3]. dependencies removed
 
 [1]: https://github.com/ebiggers/avl_tree
 [2]: https://golang.org/pkg/container
