@@ -54,7 +54,7 @@ type Iterator struct {
 // first Node or nil iff the Tree is empty.  Note that "first" in this context
 // is dependent on the direction specified when constructing the iterator.
 func (it *Iterator) First() *Node {
-	it.cur, it.next = it.tree.firstOrLastInOrder(-it.sign), nil
+	it.cur, it.next = it.tree.First(), nil
 	if it.cur != nil {
 		it.next = it.cur.nextOrPrevInOrder(it.sign)
 	}
@@ -149,6 +149,7 @@ func (n *Node) adjustBalanceFactor(amount int) {
 // Tree represents an AVL tree.
 type Tree struct {
 	root  *Node
+	first *Node
 	cmpFn CompareFunc
 	size  int
 }
@@ -161,7 +162,11 @@ func (t *Tree) Len() int {
 // First returns the first node in the Tree (in-order) or nil iff the Tree is
 // empty.
 func (t *Tree) First() *Node {
-	return t.firstOrLastInOrder(-1)
+	if t.first == nil {
+		t.first = t.firstOrLastInOrder(-1)
+	}
+	return t.first
+
 }
 
 // Last returns the last element in the Tree (in-order) or nil iff the Tree is
@@ -202,6 +207,11 @@ func (t *Tree) Insert(v interface{}) *Node {
 	}
 
 	var cur *Node
+	if t.first != nil {
+		if t.cmpFn(v, t.first.Value) < 0 {
+			t.first = nil
+		}
+	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
@@ -235,6 +245,9 @@ func (t *Tree) Remove(node *Node) {
 
 	if node.parent == node {
 		panic(errNotInTree)
+	}
+	if t.first == node {
+		t.first = nil
 	}
 
 	t.size--
