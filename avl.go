@@ -239,6 +239,44 @@ func (t *Tree) Insert(v interface{}) *Node {
 	return n
 }
 
+// Insert inserts the Node into the Tree, and returns the Node
+// or null if the node value is already present in the tree.
+func (t *Tree) InsertNode(n *Node) *Node {
+	v := n.Value
+	if t.cmpFn == nil {
+		panic(errNoCmpFn)
+	}
+
+	var cur *Node
+	if t.first != nil {
+		if t.cmpFn(v, t.first.Value) < 0 {
+			t.first = nil
+		}
+	}
+	curPtr := &t.root
+	for *curPtr != nil {
+		cur = *curPtr
+		cmp := t.cmpFn(v, cur.Value)
+		switch {
+		case cmp < 0:
+			curPtr = &cur.left
+		case cmp > 0:
+			curPtr = &cur.right
+		default:
+			return nil
+		}
+	}
+
+	// initialize node pointers
+	n.reset()
+	n.parent = cur
+	*curPtr = n
+	t.rebalanceAfterInsert(n)
+	t.size++
+
+	return n
+}
+
 // Remove removes the Node from the Tree.
 func (t *Tree) Remove(node *Node) {
 	var parent *Node
