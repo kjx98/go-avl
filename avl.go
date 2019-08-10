@@ -263,7 +263,7 @@ func (t *Tree) InsertNode(n *Node) *Node {
 		case cmp > 0:
 			curPtr = &cur.right
 		default:
-			return nil
+			return cur
 		}
 	}
 
