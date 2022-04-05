@@ -25,13 +25,15 @@ var (
 	errInvalidDirection = errors.New("avl: invalid direction")
 )
 
-// CompareFunc is the function used to compare entries in the Tree to maintain
-// ordering.  It MUST return < 0, 0, or > 0 if the a is less than,
-// equal to, or greater than b respectively.
+// Comparable is Interface the Cmp function used to compare entries in the
+// Tree to maintain ordering.  It MUST return < 0, 0, or > 0 if the a is less
+// than, equal to, or greater than b respectively.
 //
 // Note: All calls made to the comparison function will pass the user supplied
 // value as a, and the in-Tree value as b.
-type CompareFunc func(a, b interface{}) int
+type Comparable interface {
+	Cmp(a, b any) int
+}
 
 // Direction is the direction associated with an iterator.
 type Direction int
@@ -42,11 +44,20 @@ const (
 	it_sign int       = 1
 )
 
+// Node is a node of a Tree.
+type Node[T any] struct {
+	// Value is the value stored by the Node.
+	Value T
+
+	parent, left, right *Node[T]
+	balance             int
+}
+
 // Iterator is a Tree iterator.  Modifying the Tree while iterating is
 // unsupported except for removing the current Node.
-type Iterator struct {
-	tree      *Tree
-	cur, next *Node
+type Iterator[T Comparable] struct {
+	tree      *Tree[T]
+	cur, next *Node[T]
 	//sign        int
 	initialized bool
 }
@@ -54,7 +65,7 @@ type Iterator struct {
 // First moves the iterator to the first Node in the Tree and returns the
 // first Node or nil iff the Tree is empty.  Note that "first" in this context
 // is dependent on the direction specified when constructing the iterator.
-func (it *Iterator) First() *Node {
+func (it *Iterator[T]) First() *Node[T] {
 	it.cur, it.next = it.tree.First(), nil
 	if it.cur != nil {
 		it.next = it.cur.nextOrPrevInOrder(it_sign)
@@ -65,7 +76,7 @@ func (it *Iterator) First() *Node {
 
 // Get returns the Node currently pointed to by the iterator.  It is safe to
 // remove the Node returned from the Tree.
-func (it *Iterator) Get() *Node {
+func (it *Iterator[T]) Get() *Node[T] {
 	if !it.initialized {
 		return it.First()
 	}
@@ -74,7 +85,7 @@ func (it *Iterator) Get() *Node {
 
 // Next advances the iterator and returns the Node or nil iff the end of the
 // Tree has been reached.
-func (it *Iterator) Next() *Node {
+func (it *Iterator[T]) Next() *Node[T] {
 	if !it.initialized {
 		it.First()
 	}
@@ -87,35 +98,26 @@ func (it *Iterator) Next() *Node {
 	return it.cur
 }
 
-// Node is a node of a Tree.
-type Node struct {
-	// Value is the value stored by the Node.
-	Value interface{}
-
-	parent, left, right *Node
-	balance             int
-}
-
-func (n *Node) reset() {
+func (n *Node[T]) reset() {
 	// Note: This deliberately leaves Value intact.
 	n.parent, n.left, n.right = n, nil, nil
 	n.balance = 0
 }
 
-func (n *Node) setParentBalance(parent *Node, balance int) {
+func (n *Node[T]) setParentBalance(parent *Node[T], balance int) {
 	n.parent = parent
 	n.balance = balance
 }
 
-func (n *Node) getChild(sign int) *Node {
+func (n *Node[T]) getChild(sign int) *Node[T] {
 	if sign < 0 {
 		return n.left
 	}
 	return n.right
 }
 
-func (n *Node) nextOrPrevInOrder(sign int) *Node {
-	var next, tmp *Node
+func (n *Node[T]) nextOrPrevInOrder(sign int) *Node[T] {
+	var next, tmp *Node[T]
 
 	if next = n.getChild(+sign); next != nil {
 		for {
@@ -135,7 +137,7 @@ func (n *Node) nextOrPrevInOrder(sign int) *Node {
 	return next
 }
 
-func (n *Node) setChild(sign int, child *Node) {
+func (n *Node[T]) setChild(sign int, child *Node[T]) {
 	if sign < 0 {
 		n.left = child
 	} else {
@@ -143,26 +145,25 @@ func (n *Node) setChild(sign int, child *Node) {
 	}
 }
 
-func (n *Node) adjustBalanceFactor(amount int) {
+func (n *Node[T]) adjustBalanceFactor(amount int) {
 	n.balance += amount
 }
 
 // Tree represents an AVL tree.
-type Tree struct {
-	root  *Node
-	first *Node
-	cmpFn CompareFunc
+type Tree[T Comparable] struct {
+	root  *Node[T]
+	first *Node[T]
 	size  int
 }
 
 // Len returns the number of elements in the Tree.
-func (t *Tree) Len() int {
+func (t *Tree[T]) Len() int {
 	return t.size
 }
 
 // First returns the first node in the Tree (in-order) or nil iff the Tree is
 // empty.
-func (t *Tree) First() *Node {
+func (t *Tree[T]) First() *Node[T] {
 	if t.first == nil {
 		t.first = t.firstOrLastInOrder(-1)
 	}
@@ -172,21 +173,17 @@ func (t *Tree) First() *Node {
 
 // Last returns the last element in the Tree (in-order) or nil iff the Tree is
 // empty.
-func (t *Tree) Last() *Node {
+func (t *Tree[T]) Last() *Node[T] {
 	return t.firstOrLastInOrder(1)
 }
 
 // Find finds the value in the Tree, and returns the Node or nil iff the value
 // is not present.
-func (t *Tree) Find(v interface{}) *Node {
-	if t.cmpFn == nil {
-		panic(errNoCmpFn)
-	}
-
+func (t *Tree[T]) Find(v any) *Node[T] {
 	cur := t.root
 descendLoop:
 	for cur != nil {
-		cmp := t.cmpFn(v, cur.Value)
+		cmp := cur.Value.Cmp(v, cur.Value)
 		switch {
 		case cmp < 0:
 			cur = cur.left
@@ -202,21 +199,17 @@ descendLoop:
 
 // Insert inserts the value into the Tree, and returns the newly created Node
 // or the existing Node iff the value is already present in the tree.
-func (t *Tree) Insert(v interface{}) *Node {
-	if t.cmpFn == nil {
-		panic(errNoCmpFn)
-	}
-
-	var cur *Node
+func (t *Tree[T]) Insert(v any) *Node[T] {
+	var cur *Node[T]
 	if t.first != nil {
-		if t.cmpFn(v, t.first.Value) < 0 {
+		if t.first.Value.Cmp(v, t.first.Value) < 0 {
 			t.first = nil
 		}
 	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
-		cmp := t.cmpFn(v, cur.Value)
+		cmp := cur.Value.Cmp(v, cur.Value)
 		switch {
 		case cmp < 0:
 			curPtr = &cur.left
@@ -227,8 +220,8 @@ func (t *Tree) Insert(v interface{}) *Node {
 		}
 	}
 
-	n := &Node{
-		Value:   v,
+	n := &Node[T]{
+		Value:   v.(T),
 		parent:  cur,
 		balance: 0,
 	}
@@ -241,22 +234,19 @@ func (t *Tree) Insert(v interface{}) *Node {
 
 // Insert inserts the Node into the Tree, and returns the Node
 // or null if the node value is already present in the tree.
-func (t *Tree) InsertNode(n *Node) *Node {
+func (t *Tree[T]) InsertNode(n *Node[T]) *Node[T] {
 	v := n.Value
-	if t.cmpFn == nil {
-		panic(errNoCmpFn)
-	}
 
-	var cur *Node
+	var cur *Node[T]
 	if t.first != nil {
-		if t.cmpFn(v, t.first.Value) < 0 {
+		if v.Cmp(v, t.first.Value) < 0 {
 			t.first = nil
 		}
 	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
-		cmp := t.cmpFn(v, cur.Value)
+		cmp := v.Cmp(v, cur.Value)
 		switch {
 		case cmp < 0:
 			curPtr = &cur.left
@@ -278,15 +268,15 @@ func (t *Tree) InsertNode(n *Node) *Node {
 }
 
 // Remove removes the Node from the Tree.
-func (t *Tree) Remove(node *Node) {
-	var parent *Node
+func (t *Tree[T]) Remove(node *Node[T]) {
+	var parent *Node[T]
 	var leftDeleted bool
 
 	if node.parent == node {
 		panic(errNotInTree)
 	}
 	if t.first != nil {
-		if t.cmpFn(node.Value, t.first.Value) <= 0 {
+		if node.Value.Cmp(node.Value, t.first.Value) <= 0 {
 			t.first = nil
 		}
 	}
@@ -337,14 +327,14 @@ func (t *Tree) Remove(node *Node) {
 // Iterator returns an iterator that traverses the tree (in-order) in the
 // specified direction.  Modifying the Tree while iterating is unsupported
 // except for removing the current Node.
-func (t *Tree) Iterator(direction Direction) *Iterator {
+func (t *Tree[T]) Iterator(direction Direction) *Iterator[T] {
 	switch direction {
 	case Forward:
 	default:
 		panic(errInvalidDirection)
 	}
 
-	return &Iterator{
+	return &Iterator[T]{
 		tree: t,
 		//sign: 1, //int(direction),
 	}
@@ -354,7 +344,7 @@ func (t *Tree) Iterator(direction Direction) *Iterator {
 // in-order in the direction specified.  If the provided function returns
 // false, the iteration is stopped.  Modifying the Tree from within the
 // function is unsupprted except for removing the current Node.
-func (t *Tree) ForEach(direction Direction, fn func(*Node) bool) {
+func (t *Tree[T]) ForEach(direction Direction, fn func(*Node[T]) bool) {
 	it := t.Iterator(direction)
 	for node := it.Get(); node != nil; node = it.Next() {
 		if !fn(node) {
@@ -363,7 +353,7 @@ func (t *Tree) ForEach(direction Direction, fn func(*Node) bool) {
 	}
 }
 
-func (t *Tree) firstOrLastInOrder(sign int) *Node {
+func (t *Tree[T]) firstOrLastInOrder(sign int) *Node[T] {
 	first := t.root
 	if first != nil {
 		for {
@@ -377,7 +367,7 @@ func (t *Tree) firstOrLastInOrder(sign int) *Node {
 	return first
 }
 
-func (t *Tree) replaceChild(parent, oldChild, newChild *Node) {
+func (t *Tree[T]) replaceChild(parent, oldChild, newChild *Node[T]) {
 	if parent != nil {
 		if oldChild == parent.left {
 			parent.left = newChild
@@ -389,7 +379,7 @@ func (t *Tree) replaceChild(parent, oldChild, newChild *Node) {
 	}
 }
 
-func (t *Tree) rotate(a *Node, sign int) {
+func (t *Tree[T]) rotate(a *Node[T], sign int) {
 	b := a.getChild(-sign)
 	e := b.getChild(+sign)
 	p := a.parent
@@ -407,7 +397,7 @@ func (t *Tree) rotate(a *Node, sign int) {
 	t.replaceChild(p, a, b)
 }
 
-func (t *Tree) doDoubleRotate(b, a *Node, sign int) *Node {
+func (t *Tree[T]) doDoubleRotate(b, a *Node[T], sign int) *Node[T] {
 	e := b.getChild(+sign)
 	f := e.getChild(-sign)
 	g := e.getChild(+sign)
@@ -445,7 +435,7 @@ func (t *Tree) doDoubleRotate(b, a *Node, sign int) *Node {
 	return e
 }
 
-func (t *Tree) handleSubtreeGrowth(node, parent *Node, sign int) bool {
+func (t *Tree[T]) handleSubtreeGrowth(node, parent *Node[T], sign int) bool {
 	oldBalanceFactor := parent.balance
 	if oldBalanceFactor == 0 {
 		parent.adjustBalanceFactor(sign)
@@ -469,7 +459,7 @@ func (t *Tree) handleSubtreeGrowth(node, parent *Node, sign int) bool {
 	return true
 }
 
-func (t *Tree) rebalanceAfterInsert(inserted *Node) {
+func (t *Tree[T]) rebalanceAfterInsert(inserted *Node[T]) {
 	node, parent := inserted, inserted.parent
 	switch {
 	case parent == nil:
@@ -498,15 +488,15 @@ func (t *Tree) rebalanceAfterInsert(inserted *Node) {
 	}
 }
 
-func (t *Tree) swapWithSuccessor(x *Node) (*Node, bool) {
-	var ret *Node
+func (t *Tree[T]) swapWithSuccessor(x *Node[T]) (*Node[T], bool) {
+	var ret *Node[T]
 	var leftDeleted bool
 
 	y := x.right
 	if y.left == nil {
 		ret = y
 	} else {
-		var q *Node
+		var q *Node[T]
 
 		for {
 			q = y
@@ -535,14 +525,15 @@ func (t *Tree) swapWithSuccessor(x *Node) (*Node, bool) {
 	return ret, leftDeleted
 }
 
-func (t *Tree) handleSubtreeShrink(parent *Node, sign int, leftDeleted *bool) *Node {
+func (t *Tree[T]) handleSubtreeShrink(parent *Node[T], sign int,
+	leftDeleted *bool) *Node[T] {
 	oldBalanceFactor := parent.balance
 	if oldBalanceFactor == 0 {
 		parent.adjustBalanceFactor(sign)
 		return nil
 	}
 
-	var node *Node
+	var node *Node[T]
 	newBalanceFactor := oldBalanceFactor + sign
 	if newBalanceFactor == 0 {
 		parent.adjustBalanceFactor(sign)
@@ -568,10 +559,6 @@ func (t *Tree) handleSubtreeShrink(parent *Node, sign int, leftDeleted *bool) *N
 }
 
 // New returns an initialized Tree.
-func New(cmpFn CompareFunc) *Tree {
-	if cmpFn == nil {
-		panic(errNoCmpFn)
-	}
-
-	return &Tree{cmpFn: cmpFn}
+func New[T Comparable]() *Tree[T] {
+	return &Tree[T]{}
 }
