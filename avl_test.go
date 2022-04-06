@@ -25,12 +25,12 @@ func (lv myInt) Cmp(a, b any) int {
 }
 
 func TestAVLTree(t *testing.T) {
-	Equal := func(a, b interface{}, ss string, args ...interface{}) {
+	Equal := func(a, b any, ss string, args ...any) {
 		if !reflect.DeepEqual(a, b) {
 			t.Errorf(ss, args...)
 		}
 	}
-	Nil := func(a interface{}, ss string, args ...interface{}) {
+	Nil := func(a any, ss string, args ...any) {
 		if !reflect.ValueOf(a).IsNil() {
 			t.Errorf(ss, args...)
 		}
@@ -147,7 +147,7 @@ func (t *Tree[T]) validate(te *testing.T) {
 }
 
 func checkInvariants[T Comparable](te *testing.T, node, parent *Node[T]) int {
-	Equal := func(a, b interface{}) {
+	Equal := func(a, b any) {
 		if !reflect.DeepEqual(a, b) {
 			te.Error(a, "notEqual", b)
 		}
