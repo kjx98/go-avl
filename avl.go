@@ -1,5 +1,9 @@
 // avl.go - An AVL tree implementation.
 //
+// To the extent possible under law, Jesse Kuang has waived all copyright
+// and related or neighboring rights to go-avl, using the Creative
+// Commons "CC0" public domain dedication. See LICENSE for full details.
+//
 // To the extent possible under law, Yawning Angel has waived all copyright
 // and related or neighboring rights to avl, using the Creative
 // Commons "CC0" public domain dedication. See LICENSE or
@@ -179,7 +183,7 @@ func (t *Tree[T]) Last() *Node[T] {
 
 // Find finds the value in the Tree, and returns the Node or nil iff the value
 // is not present.
-func (t *Tree[T]) Find(v any) *Node[T] {
+func (t *Tree[T]) Find(v T) *Node[T] {
 	cur := t.root
 descendLoop:
 	for cur != nil {
@@ -199,7 +203,7 @@ descendLoop:
 
 // Insert inserts the value into the Tree, and returns the newly created Node
 // or the existing Node iff the value is already present in the tree.
-func (t *Tree[T]) Insert(v any) *Node[T] {
+func (t *Tree[T]) Insert(v T) *Node[T] {
 	var cur *Node[T]
 	if t.first != nil {
 		if t.first.Value.Cmp(v, t.first.Value) < 0 {
@@ -221,7 +225,7 @@ func (t *Tree[T]) Insert(v any) *Node[T] {
 	}
 
 	n := &Node[T]{
-		Value:   v.(T),
+		Value:   v,
 		parent:  cur,
 		balance: 0,
 	}

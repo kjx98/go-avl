@@ -1,10 +1,10 @@
 ### AVL - AVL tree
-#### Yawning Angel (yawning at schwanenlied dot me)
+#### Jesse Kuang (jkuang at 21cn dot com)
 
-[![GoDoc](https://godoc.org/git.schwanenlied.me/yawning/avl.git?status.svg)](https://godoc.org/git.schwanenlied.me/yawning/avl.git)
+[![GoDoc](https://godoc.org/github.com/kjx98/go-avl.git?status.svg)](https://godoc.org/github.com/kjx98/go-avl.git)
 
-A generic Go AVL tree implementation, derived from [Eric Biggers' C code][1],
-in the spirt of [the runtime library's containers][2].
+A generic type Go AVL tree implementation, forked from yawning, derived from
+[Eric Biggers' C code][1], in the spirt of [the runtime library's containers][2].
 
 Features:
 
