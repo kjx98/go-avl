@@ -1,5 +1,9 @@
 // avl.go - An AVL tree implementation.
 //
+// To the extent possible under law, Jesse Kuang has waived all copyright
+// and related or neighboring rights to go-avl, using the Creative
+// Commons "CC0" public domain dedication. See LICENSE for full details.
+//
 // To the extent possible under law, Yawning Angel has waived all copyright
 // and related or neighboring rights to avl, using the Creative
 // Commons "CC0" public domain dedication. See LICENSE or
