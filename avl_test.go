@@ -18,12 +18,6 @@ import (
 	"testing"
 )
 
-type myInt int
-
-func (lv myInt) Cmp(a, b any) int {
-	return int(a.(myInt)) - int(b.(myInt))
-}
-
 func TestAVLTree(t *testing.T) {
 	Equal := func(a, b any, ss string, args ...any) {
 		if !reflect.DeepEqual(a, b) {
@@ -36,7 +30,9 @@ func TestAVLTree(t *testing.T) {
 		}
 	}
 
-	tree := New[myInt]()
+	tree := New[int](func(a, b int) int {
+		return a - b
+	})
 	Equal(0, tree.Len(), "Len(): empty")
 	Nil(tree.First(), "First(): empty")
 	Nil(tree.Last(), "Last(): empty")
@@ -47,13 +43,13 @@ func TestAVLTree(t *testing.T) {
 
 	// Test insertion.
 	const nrEntries = 1024
-	insertedMap := make(map[int]*Node[myInt])
+	insertedMap := make(map[int]*Node[int])
 	for len(insertedMap) != nrEntries {
 		v := rand.Int()
 		if insertedMap[v] != nil {
 			continue
 		}
-		insertedMap[v] = tree.Insert(myInt(v))
+		insertedMap[v] = tree.Insert(int(v))
 		tree.validate(t)
 	}
 	Equal(nrEntries, tree.Len(), "Len(): After insertion")
@@ -63,7 +59,7 @@ func TestAVLTree(t *testing.T) {
 
 	// Ensure that all entries can be found.
 	for k, v := range insertedMap {
-		Equal(v, tree.Find(myInt(k)), "Find(): %v", k)
+		Equal(v, tree.Find(k), "Find(): %v", k)
 		Equal(k, int(v.Value), "Find(): %v Value", k)
 	}
 
@@ -73,8 +69,8 @@ func TestAVLTree(t *testing.T) {
 		fwdInOrder = append(fwdInOrder, int(k))
 	}
 	sort.Ints(fwdInOrder)
-	Equal(myInt(fwdInOrder[0]), tree.First().Value, "First(), full")
-	Equal(myInt(fwdInOrder[nrEntries-1]), tree.Last().Value, "Last(), full")
+	Equal(fwdInOrder[0], tree.First().Value, "First(), full")
+	Equal(fwdInOrder[nrEntries-1], tree.Last().Value, "Last(), full")
 	t.Log("After forward validate OK")
 
 	revInOrder := make([]int, 0, nrEntries)
@@ -95,7 +91,7 @@ func TestAVLTree(t *testing.T) {
 
 	// Test the forward/backward ForEach.
 	forEachValues := make([]int, 0, nrEntries)
-	forEachFn := func(n *Node[myInt]) bool {
+	forEachFn := func(n *Node[int]) bool {
 		forEachValues = append(forEachValues, int(n.Value))
 		return true
 	}
@@ -108,14 +104,14 @@ func TestAVLTree(t *testing.T) {
 	// Test removal.
 	for i, idx := range rand.Perm(nrEntries) { // In random order.
 		v := fwdInOrder[idx]
-		node := tree.Find(myInt(v))
+		node := tree.Find(int(v))
 		Equal(v, int(node.Value), "Find(): %v (Pre-remove)", v)
 
 		tree.Remove(node)
 		Equal(nrEntries-(i+1), tree.Len(), "Len(): %v (Post-remove)", v)
 		tree.validate(t)
 
-		node = tree.Find(myInt(v))
+		node = tree.Find(int(v))
 		Nil(node, "Find(): %v (Post-remove)", v)
 	}
 	Equal(0, tree.Len(), "Len(): After removal")
@@ -124,7 +120,7 @@ func TestAVLTree(t *testing.T) {
 
 	// Refill the tree.
 	for _, v := range fwdInOrder {
-		tree.Insert(myInt(v))
+		tree.Insert(int(v))
 	}
 
 	// Test that removing the node doesn't break the iterator.
@@ -146,7 +142,7 @@ func (t *Tree[T]) validate(te *testing.T) {
 	checkInvariants(te, t.root, nil)
 }
 
-func checkInvariants[T Comparable](te *testing.T, node, parent *Node[T]) int {
+func checkInvariants[T any](te *testing.T, node, parent *Node[T]) int {
 	Equal := func(a, b any) {
 		if !reflect.DeepEqual(a, b) {
 			te.Error(a, "notEqual", b)
@@ -180,35 +176,41 @@ func checkInvariants[T Comparable](te *testing.T, node, parent *Node[T]) int {
 
 func BenchmarkAVLInsert(b *testing.B) {
 	b.StopTimer()
-	tree := New[myInt]()
+	tree := New[int](func(a, b int) int {
+		return a - b
+	})
 	for i := 0; i < 1e6; i++ {
-		tree.Insert(myInt(i))
+		tree.Insert(int(i))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		v := (rand.Int() % 1e6) + 2e6
-		tree.Insert(myInt(v))
+		tree.Insert(int(v))
 	}
 }
 
 func BenchmarkAVLFind(b *testing.B) {
 	b.StopTimer()
-	tree := New[myInt]()
+	tree := New[int](func(a, b int) int {
+		return a - b
+	})
 	for i := 0; i < 1e6; i++ {
-		tree.Insert(myInt(i))
+		tree.Insert(int(i))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		v := (rand.Int() % 1e6)
-		tree.Find(myInt(v))
+		tree.Find(int(v))
 	}
 }
 
 func BenchmarkAVLDeleteLeft(b *testing.B) {
 	b.StopTimer()
-	tree := New[myInt]()
+	tree := New[int](func(a, b int) int {
+		return a - b
+	})
 	for i := 0; i < 5e6; i++ {
-		tree.Insert(myInt(i))
+		tree.Insert(int(i))
 	}
 	b.StartTimer()
 	it := tree.Iterator(Forward)

@@ -35,9 +35,7 @@ var (
 //
 // Note: All calls made to the comparison function will pass the user supplied
 // value as a, and the in-Tree value as b.
-type Comparable interface {
-	Cmp(a, b any) int
-}
+type CompareFunc[T any] func(a, b T) int
 
 // Direction is the direction associated with an iterator.
 type Direction int
@@ -59,7 +57,7 @@ type Node[T any] struct {
 
 // Iterator is a Tree iterator.  Modifying the Tree while iterating is
 // unsupported except for removing the current Node.
-type Iterator[T Comparable] struct {
+type Iterator[T any] struct {
 	tree      *Tree[T]
 	cur, next *Node[T]
 	//sign        int
@@ -154,9 +152,10 @@ func (n *Node[T]) adjustBalanceFactor(amount int) {
 }
 
 // Tree represents an AVL tree.
-type Tree[T Comparable] struct {
+type Tree[T any] struct {
 	root  *Node[T]
 	first *Node[T]
+	cmpFn CompareFunc[T]
 	size  int
 }
 
@@ -184,10 +183,14 @@ func (t *Tree[T]) Last() *Node[T] {
 // Find finds the value in the Tree, and returns the Node or nil iff the value
 // is not present.
 func (t *Tree[T]) Find(v T) *Node[T] {
+	if t.cmpFn == nil {
+		panic(errNoCmpFn)
+	}
+
 	cur := t.root
 descendLoop:
 	for cur != nil {
-		cmp := cur.Value.Cmp(v, cur.Value)
+		cmp := t.cmpFn(v, cur.Value)
 		switch {
 		case cmp < 0:
 			cur = cur.left
@@ -204,16 +207,20 @@ descendLoop:
 // Insert inserts the value into the Tree, and returns the newly created Node
 // or the existing Node iff the value is already present in the tree.
 func (t *Tree[T]) Insert(v T) *Node[T] {
+	if t.cmpFn == nil {
+		panic(errNoCmpFn)
+	}
+
 	var cur *Node[T]
 	if t.first != nil {
-		if t.first.Value.Cmp(v, t.first.Value) < 0 {
+		if t.cmpFn(v, t.first.Value) < 0 {
 			t.first = nil
 		}
 	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
-		cmp := cur.Value.Cmp(v, cur.Value)
+		cmp := t.cmpFn(v, cur.Value)
 		switch {
 		case cmp < 0:
 			curPtr = &cur.left
@@ -240,17 +247,20 @@ func (t *Tree[T]) Insert(v T) *Node[T] {
 // or null if the node value is already present in the tree.
 func (t *Tree[T]) InsertNode(n *Node[T]) *Node[T] {
 	v := n.Value
+	if t.cmpFn == nil {
+		panic(errNoCmpFn)
+	}
 
 	var cur *Node[T]
 	if t.first != nil {
-		if v.Cmp(v, t.first.Value) < 0 {
+		if t.cmpFn(v, t.first.Value) < 0 {
 			t.first = nil
 		}
 	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
-		cmp := v.Cmp(v, cur.Value)
+		cmp := t.cmpFn(v, cur.Value)
 		switch {
 		case cmp < 0:
 			curPtr = &cur.left
@@ -280,7 +290,7 @@ func (t *Tree[T]) Remove(node *Node[T]) {
 		panic(errNotInTree)
 	}
 	if t.first != nil {
-		if node.Value.Cmp(node.Value, t.first.Value) <= 0 {
+		if t.cmpFn(node.Value, t.first.Value) <= 0 {
 			t.first = nil
 		}
 	}
@@ -563,6 +573,10 @@ func (t *Tree[T]) handleSubtreeShrink(parent *Node[T], sign int,
 }
 
 // New returns an initialized Tree.
-func New[T Comparable]() *Tree[T] {
-	return &Tree[T]{}
+func New[T any](cmpFn CompareFunc[T]) *Tree[T] {
+	if cmpFn == nil {
+		panic(errNoCmpFn)
+	}
+
+	return &Tree[T]{cmpFn: cmpFn}
 }
