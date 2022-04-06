@@ -1,3 +1,3 @@
 module github.com/kjx98/go-avl
 
-go 1.15
+go 1.18
