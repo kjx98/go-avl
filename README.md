@@ -15,6 +15,16 @@ Features:
  * In-order traversal (forward and backward) with an iterator or callback.
  * Non-recursive.
 
+Generic Improve:
+ * Generic type improved over 20% compared to interface{} generic func
+ * Benchmark cmp
+<pre>
+benchmark                  old ns/op     new ns/op     delta
+BenchmarkAVLInsert         1003          674           -32.83%
+BenchmarkAVLFind           880           687           -21.92%
+BenchmarkAVLDeleteLeft     0.16          69.0          +42812.26%
+</pre>
+
 Note:
 
  * The package itself is free from external dependencies, the unit tests use
