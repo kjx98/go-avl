@@ -35,7 +35,7 @@ var (
 //
 // Note: All calls made to the comparison function will pass the user supplied
 // value as a, and the in-Tree value as b.
-type CompareFunc[T any] func(a, b T) int
+type CompareFunc[T any] func(a, b *T) int
 
 // Direction is the direction associated with an iterator.
 type Direction int
@@ -182,7 +182,7 @@ func (t *Tree[T]) Last() *Node[T] {
 
 // Find finds the value in the Tree, and returns the Node or nil iff the value
 // is not present.
-func (t *Tree[T]) Find(v T) *Node[T] {
+func (t *Tree[T]) Find(v *T) *Node[T] {
 	if t.cmpFn == nil {
 		panic(errNoCmpFn)
 	}
@@ -190,7 +190,7 @@ func (t *Tree[T]) Find(v T) *Node[T] {
 	cur := t.root
 descendLoop:
 	for cur != nil {
-		cmp := t.cmpFn(v, cur.Value)
+		cmp := t.cmpFn(v, &cur.Value)
 		switch {
 		case cmp < 0:
 			cur = cur.left
@@ -206,21 +206,21 @@ descendLoop:
 
 // Insert inserts the value into the Tree, and returns the newly created Node
 // or the existing Node iff the value is already present in the tree.
-func (t *Tree[T]) Insert(v T) *Node[T] {
+func (t *Tree[T]) Insert(v *T) *Node[T] {
 	if t.cmpFn == nil {
 		panic(errNoCmpFn)
 	}
 
 	var cur *Node[T]
 	if t.first != nil {
-		if t.cmpFn(v, t.first.Value) < 0 {
+		if t.cmpFn(v, &t.first.Value) < 0 {
 			t.first = nil
 		}
 	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
-		cmp := t.cmpFn(v, cur.Value)
+		cmp := t.cmpFn(v, &cur.Value)
 		switch {
 		case cmp < 0:
 			curPtr = &cur.left
@@ -232,7 +232,7 @@ func (t *Tree[T]) Insert(v T) *Node[T] {
 	}
 
 	n := &Node[T]{
-		Value:   v,
+		Value:   *v,
 		parent:  cur,
 		balance: 0,
 	}
@@ -246,21 +246,21 @@ func (t *Tree[T]) Insert(v T) *Node[T] {
 // Insert inserts the Node into the Tree, and returns the Node
 // or null if the node value is already present in the tree.
 func (t *Tree[T]) InsertNode(n *Node[T]) *Node[T] {
-	v := n.Value
+	v := &n.Value
 	if t.cmpFn == nil {
 		panic(errNoCmpFn)
 	}
 
 	var cur *Node[T]
 	if t.first != nil {
-		if t.cmpFn(v, t.first.Value) < 0 {
+		if t.cmpFn(v, &t.first.Value) < 0 {
 			t.first = nil
 		}
 	}
 	curPtr := &t.root
 	for *curPtr != nil {
 		cur = *curPtr
-		cmp := t.cmpFn(v, cur.Value)
+		cmp := t.cmpFn(v, &cur.Value)
 		switch {
 		case cmp < 0:
 			curPtr = &cur.left
@@ -290,7 +290,7 @@ func (t *Tree[T]) Remove(node *Node[T]) {
 		panic(errNotInTree)
 	}
 	if t.first != nil {
-		if t.cmpFn(node.Value, t.first.Value) <= 0 {
+		if t.cmpFn(&node.Value, &t.first.Value) <= 0 {
 			t.first = nil
 		}
 	}

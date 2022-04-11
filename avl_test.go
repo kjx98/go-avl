@@ -30,8 +30,8 @@ func TestAVLTree(t *testing.T) {
 		}
 	}
 
-	tree := New[int](func(a, b int) int {
-		return a - b
+	tree := New[int](func(a, b *int) int {
+		return *a - *b
 	})
 	Equal(0, tree.Len(), "Len(): empty")
 	Nil(tree.First(), "First(): empty")
@@ -49,7 +49,7 @@ func TestAVLTree(t *testing.T) {
 		if insertedMap[v] != nil {
 			continue
 		}
-		insertedMap[v] = tree.Insert(int(v))
+		insertedMap[v] = tree.Insert(&v)
 		tree.validate(t)
 	}
 	Equal(nrEntries, tree.Len(), "Len(): After insertion")
@@ -59,7 +59,7 @@ func TestAVLTree(t *testing.T) {
 
 	// Ensure that all entries can be found.
 	for k, v := range insertedMap {
-		Equal(v, tree.Find(k), "Find(): %v", k)
+		Equal(v, tree.Find(&k), "Find(): %v", k)
 		Equal(k, int(v.Value), "Find(): %v Value", k)
 	}
 
@@ -104,14 +104,14 @@ func TestAVLTree(t *testing.T) {
 	// Test removal.
 	for i, idx := range rand.Perm(nrEntries) { // In random order.
 		v := fwdInOrder[idx]
-		node := tree.Find(int(v))
+		node := tree.Find(&v)
 		Equal(v, int(node.Value), "Find(): %v (Pre-remove)", v)
 
 		tree.Remove(node)
 		Equal(nrEntries-(i+1), tree.Len(), "Len(): %v (Post-remove)", v)
 		tree.validate(t)
 
-		node = tree.Find(int(v))
+		node = tree.Find(&v)
 		Nil(node, "Find(): %v (Post-remove)", v)
 	}
 	Equal(0, tree.Len(), "Len(): After removal")
@@ -120,7 +120,7 @@ func TestAVLTree(t *testing.T) {
 
 	// Refill the tree.
 	for _, v := range fwdInOrder {
-		tree.Insert(int(v))
+		tree.Insert(&v)
 	}
 
 	// Test that removing the node doesn't break the iterator.
@@ -176,41 +176,41 @@ func checkInvariants[T any](te *testing.T, node, parent *Node[T]) int {
 
 func BenchmarkAVLInsert(b *testing.B) {
 	b.StopTimer()
-	tree := New[int](func(a, b int) int {
-		return a - b
+	tree := New[int](func(a, b *int) int {
+		return *a - *b
 	})
 	for i := 0; i < 1e6; i++ {
-		tree.Insert(int(i))
+		tree.Insert(&i)
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		v := (rand.Int() % 1e6) + 2e6
-		tree.Insert(int(v))
+		tree.Insert(&v)
 	}
 }
 
 func BenchmarkAVLFind(b *testing.B) {
 	b.StopTimer()
-	tree := New[int](func(a, b int) int {
-		return a - b
+	tree := New[int](func(a, b *int) int {
+		return *a - *b
 	})
 	for i := 0; i < 1e6; i++ {
-		tree.Insert(int(i))
+		tree.Insert(&i)
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		v := (rand.Int() % 1e6)
-		tree.Find(int(v))
+		tree.Find(&v)
 	}
 }
 
 func BenchmarkAVLDeleteLeft(b *testing.B) {
 	b.StopTimer()
-	tree := New[int](func(a, b int) int {
-		return a - b
+	tree := New[int](func(a, b *int) int {
+		return *a - *b
 	})
 	for i := 0; i < 5e6; i++ {
-		tree.Insert(int(i))
+		tree.Insert(&i)
 	}
 	b.StartTimer()
 	it := tree.Iterator(Forward)
