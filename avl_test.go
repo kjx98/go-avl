@@ -174,6 +174,24 @@ func checkInvariants[T, K any](te *testing.T, node, parent *Node[T, K]) int {
 	return rHeight + 1
 }
 
+//go:noinline
+func chkInterface(v any) any {
+	ii, _ := v.(int)
+	return ii + 123
+}
+
+func BenchmarkIntf(b *testing.B) {
+	b.StopTimer()
+	v := (rand.Int() % 1e6) + 2e6
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		vv, _ := chkInterface(v).(int)
+		v += vv
+		v >>= 1
+	}
+	v -= 123
+}
+
 func BenchmarkAVLInsert(b *testing.B) {
 	b.StopTimer()
 	tree := New[int, int](func(a, b int) int {
